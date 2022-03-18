@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "react-query";
+import Modal from "react-modal";
 
 //services
 import API from "../../../services/api";
@@ -10,23 +11,21 @@ import { ToDoProps } from "../../../types/todo";
 
 //components
 import Item from "./Item";
+import CreateItemModal from "../CreateUpdateItemModal";
 
 //@mui components
 import List from "@mui/material/List";
 import ListItemAvatar from "@mui/material/ListItemAvatar";
 import ListItemText from "@mui/material/ListItemText";
-import TextField from "@mui/material/TextField";
 import Avatar from "@mui/material/Avatar";
-import Checkbox from "@mui/material/Checkbox";
-import Button from "@mui/material/Button";
 
 //icons and styles
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import IconButton from "@mui/material/IconButton";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import SendIcon from "@mui/icons-material/Send";
 import { Container, Content, Status } from "./styles";
 
 type ItemProps = UserProps & ToDoProps;
@@ -38,8 +37,10 @@ type ListItemsProps = ToDoProps &
     keyData: string;
     isSelectableList?: boolean;
     selected?: ItemProps;
-    onSelection?: (value: ItemProps) => void;
+    onSelection?: (value: ItemProps | undefined) => void;
   };
+
+Modal.setAppElement("#root");
 
 function ListItems({
   data,
@@ -49,20 +50,35 @@ function ListItems({
   selected,
   onSelection,
 }: ListItemsProps) {
-  const [inputFields, setInputFields] = useState<ToDoProps>({
-    completed: false,
-    title: "",
-  });
+  const [createItemModalOpen, setCreateItemModalOpen] = useState(false);
+  const [editItem, setEditItem] = useState<ItemProps>();
 
   const queryClient = useQueryClient();
   const isDataCached = !!queryClient.getQueryData(keyData);
+
+  function openEditItem(item: ItemProps) {
+    setEditItem(item);
+    handleOpenCreateItemModal();
+  }
+
+  function handleOpenCreateItemModal() {
+    setCreateItemModalOpen(true);
+  }
+
+  function handleCloseCreateItemModal() {
+    setCreateItemModalOpen(false);
+  }
 
   function handleChangeData(data: ItemProps[]) {
     if (changeData) changeData(data);
   }
 
-  function handleSelectItem(item: UserProps) {
-    if (onSelection) onSelection(item);
+  function handleSelectItem(item: UserProps | undefined) {
+    const oldSelectedId = queryClient.getQueryData("selectedUserId");
+    const newSelected = item?.id === oldSelectedId ? undefined : item;
+
+    if (onSelection) onSelection(newSelected);
+    queryClient.setQueryData("selectedUserId", newSelected);
   }
 
   async function handleChangeStatusItem(item: ToDoProps) {
@@ -87,27 +103,15 @@ function ListItems({
     }
   }
 
-  async function handleAddItem() {
-    try {
-      if (!data) return;
-
-      const response = await API.post(`/${keyData}`, {
-        ...inputFields,
-      });
-
-      if (isDataCached)
-        queryClient.setQueryData(keyData, [response.data, ...data]);
-      else handleChangeData([response.data, ...data]);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
   async function handleRemoveItem(index: number) {
     try {
       if (!data) return;
 
       await API.delete(`/${keyData}/${data[index].id}`);
+
+      if (data[index].id === selected?.id) {
+        handleSelectItem(undefined);
+      }
 
       const newItems = data.filter((item) => item.id !== data[index].id);
 
@@ -119,45 +123,9 @@ function ListItems({
   }
 
   return (
-    <>
+    <Container>
       {data && (
-        <Container>
-          {!isSelectableList && (
-            <div className="add-item">
-              <div className="buttons-add">
-                <Checkbox
-                  onClick={() =>
-                    setInputFields({
-                      ...inputFields,
-                      completed: !inputFields.completed,
-                    })
-                  }
-                  checked={inputFields.completed}
-                  icon={<CheckCircleIcon />}
-                  checkedIcon={<CheckCircleIcon color="success" />}
-                />
-              </div>
-              <TextField
-                id="standard-basic"
-                label="Title"
-                variant="standard"
-                value={inputFields.title}
-                onChange={({ target }) =>
-                  setInputFields({ ...inputFields, title: target.value })
-                }
-              />
-              <div className="buttons-add">
-                <Button
-                  variant="contained"
-                  endIcon={<SendIcon />}
-                  onClick={handleAddItem}
-                >
-                  ADD
-                </Button>
-              </div>
-            </div>
-          )}
-
+        <>
           <List dense={false}>
             {data.map((item, index) => (
               <Content key={index}>
@@ -176,24 +144,29 @@ function ListItems({
                   <ListItemText
                     primary={item.name || item.title}
                     secondary={
-                      !isSelectableList && (
+                      keyData === "todos" ? (
                         <Status completed={!!item.completed}>
                           {item.completed ? "completed" : "uncompleted"}
                         </Status>
+                      ) : (
+                        keyData === "users" && <span>{item.username}</span>
                       )
                     }
                   />
                 </Item>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "center",
-                  }}
-                >
-                  {!isSelectableList && (
+                <div className="buttons">
+                  {isSelectableList ? (
                     <IconButton
                       edge="end"
-                      aria-label="delete"
+                      aria-label="edit item"
+                      onClick={() => openEditItem(item)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  ) : (
+                    <IconButton
+                      edge="end"
+                      aria-label="item status"
                       onClick={() => {
                         handleChangeStatusItem(item);
                       }}
@@ -206,7 +179,7 @@ function ListItems({
 
                   <IconButton
                     edge="end"
-                    aria-label="delete"
+                    aria-label="delete item"
                     onClick={() => handleRemoveItem(index)}
                   >
                     <DeleteIcon />
@@ -215,9 +188,29 @@ function ListItems({
               </Content>
             ))}
           </List>
-        </Container>
+          {createItemModalOpen && (
+            <CreateItemModal
+              isOpen={createItemModalOpen}
+              onRequestClose={handleCloseCreateItemModal}
+              keyData={keyData}
+              editItem={editItem}
+              listItems={data}
+              setEditListItems={(newList) => {
+                if (changeData) changeData(newList);
+              }}
+            />
+          )}
+        </>
       )}
-    </>
+      {data?.length === 0 && (
+        <div className="not-results">
+          <span>
+            Apparently you have not selected a user or the selected user has no
+            tasks
+          </span>
+        </div>
+      )}
+    </Container>
   );
 }
 

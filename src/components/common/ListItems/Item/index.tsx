@@ -33,7 +33,7 @@ function Item({
           {children}
         </ListItemButton>
       ) : (
-        <ListItem onClick={click}>{children}</ListItem>
+        <ListItem>{children}</ListItem>
       )}
     </ContainerItem>
   );

@@ -1,29 +1,16 @@
 import styled from "styled-components";
 
 export const Container = styled.div`
-  .add-item {
-    justify-content: space-between;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    margin: 1rem;
-
-    div:nth-child(2),
-    label {
-      margin-left: 0.5rem;
-      margin-right: 1rem;
-    }
-
-    div:nth-child(3) {
-      display: flex;
-      justify-content: flex-end;
-    }
+  .buttons {
+    display: flex;
+    justify-content: center;
   }
 
-  .buttons-add {
-    margin-top: 12px;
-    button {
-      height: 32px;
-    }
+  .not-results {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 3rem;
   }
 `;
 
@@ -34,7 +21,7 @@ export const Content = styled.div`
 `;
 
 type StatusProps = {
-  completed: boolean;
+  completed?: boolean;
 };
 export const Status = styled.span<StatusProps>`
   color: ${({ completed }) => (completed ? "green" : "rgba(255,0,0,0.5)")};

@@ -1,10 +1,23 @@
+export type Address = {
+  street: string;
+  suite: string;
+  city: string;
+  zipcode: string;
+};
+
+export type Company = {
+  name: string;
+  catchPhrase: string;
+  bs: string;
+};
+
 export type UserProps = {
   id?: number;
   name?: string;
   username?: string;
   email?: string;
-  address?: Record<string, string>;
+  address?: Address;
   phone?: string;
   website?: string;
-  company?: Record<string, string>;
+  company?: Company;
 };
