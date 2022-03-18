@@ -11,7 +11,7 @@ import { ToDoProps } from "../../../types/todo";
 
 //components
 import Item from "./Item";
-import CreateItemModal from "../CreateUpdateItemModal";
+import CreateUpdateItemModal from "../CreateUpdateItemModal";
 
 //@mui components
 import List from "@mui/material/List";
@@ -189,7 +189,7 @@ function ListItems({
             ))}
           </List>
           {createItemModalOpen && (
-            <CreateItemModal
+            <CreateUpdateItemModal
               isOpen={createItemModalOpen}
               onRequestClose={handleCloseCreateItemModal}
               keyData={keyData}

@@ -12,7 +12,7 @@ import { ToDoProps } from "../../../types/todo";
 //components
 import TabPanel from "../../common/TabPanel";
 import ListItems from "../../common/ListItems";
-import CreateItemModal from "../../common/CreateUpdateItemModal";
+import CreateUpdateItemModal from "../../common/CreateUpdateItemModal";
 
 //@mui components
 import Tab from "@mui/material/Tab";
@@ -93,7 +93,7 @@ function Home() {
           <Tab icon={<FormatListBulletedIcon />} label="todos" />
         </Tabs>
         <TabPanel value={tabValue} index={0}>
-          <CreateItemModal
+          <CreateUpdateItemModal
             isOpen={createItemModalOpen}
             onRequestClose={handleCloseCreateItemModal}
             keyData={"users"}
@@ -116,7 +116,7 @@ function Home() {
           />
         </TabPanel>
         <TabPanel value={tabValue} index={1}>
-          <CreateItemModal
+          <CreateUpdateItemModal
             isOpen={createItemModalOpen}
             onRequestClose={handleCloseCreateItemModal}
             keyData={"todos"}
@@ -125,15 +125,17 @@ function Home() {
               if (userToDos) setUserToDos(newList);
             }}
           />
+          {user && (
+            <Button
+              variant="contained"
+              onClick={handleOpenCreateItemModal}
+              startIcon={<AddCircleOutlinedIcon />}
+              style={{ margin: "1rem" }}
+            >
+              Add todo
+            </Button>
+          )}
 
-          <Button
-            variant="contained"
-            onClick={handleOpenCreateItemModal}
-            startIcon={<AddCircleOutlinedIcon />}
-            style={{ margin: "1rem" }}
-          >
-            Add todo
-          </Button>
           <ListItems
             data={userToDos}
             keyData={"todos"}

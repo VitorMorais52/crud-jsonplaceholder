@@ -33,7 +33,7 @@ type CreateItemModalProps = {
   setEditListItems?: (newList: ToDoProps[] | UserProps[]) => void;
 };
 
-function CreateItemModal({
+function CreateUpdateItemModal({
   isOpen,
   onRequestClose,
   keyData,
@@ -258,4 +258,4 @@ function CreateItemModal({
   );
 }
 
-export default CreateItemModal;
+export default CreateUpdateItemModal;
