@@ -92,7 +92,7 @@ function ListItems({
       });
     } catch (error) {
       console.error(
-        "O item não existe na API, mas seu status foi alterado no app"
+        "The item does not exist in the API, but its status has been changed locally in the app"
       );
     } finally {
       const newItems = data.map((oldItem) => {

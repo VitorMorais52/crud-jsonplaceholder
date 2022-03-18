@@ -31,7 +31,6 @@ function Home() {
   const [user, setUser] = useState<UserProps | undefined>();
   const [userToDos, setUserToDos] = useState<ToDoProps[]>();
   const [tabValue, setTabValue] = useState(0);
-
   const [createItemModalOpen, setCreateItemModalOpen] = useState(false);
 
   const queryClient = useQueryClient();
@@ -91,7 +90,7 @@ function Home() {
           variant="fullWidth"
         >
           <Tab icon={<PersonPinIcon />} label="users" />
-          <Tab icon={<FormatListBulletedIcon />} label="todo" />
+          <Tab icon={<FormatListBulletedIcon />} label="todos" />
         </Tabs>
         <TabPanel value={tabValue} index={0}>
           <CreateItemModal
