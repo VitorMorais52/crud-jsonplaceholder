@@ -1,18 +1,21 @@
-import { SyntheticEvent, useState, useEffect } from "react";
-import { useQuery, useQueryClient } from "react-query";
+import { SyntheticEvent, useState } from "react";
+import { useQuery } from "react-query";
 import Modal from "react-modal";
 
 //services
 import API from "../../../services/api";
 
+//hooks
+import { useItemModal } from "../../../hooks/useItemModal";
+import { useSelectedUser } from "../../../hooks/useSelectedUser";
+
 //types
 import { UserProps } from "../../../types/user";
-import { ToDoProps } from "../../../types/todo";
 
 //components
 import TabPanel from "../../common/TabPanel";
 import ListItems from "../../common/ListItems";
-import CreateUpdateItemModal from "../../common/CreateUpdateItemModal";
+import ItemModal from "../../common/ItemModal";
 
 //@mui components
 import Tab from "@mui/material/Tab";
@@ -28,14 +31,11 @@ import { Container } from "./styles";
 Modal.setAppElement("#root");
 
 function Home() {
-  const [user, setUser] = useState<UserProps | undefined>();
-  const [userToDos, setUserToDos] = useState<ToDoProps[]>();
+  const { user } = useSelectedUser();
+  const { handleOpenItemModal } = useItemModal();
   const [tabValue, setTabValue] = useState(0);
-  const [createItemModalOpen, setCreateItemModalOpen] = useState(false);
 
-  const queryClient = useQueryClient();
-
-  const { data: users } = useQuery<UserProps[]>(
+  useQuery<UserProps[]>(
     "users",
     async () => {
       const response = await API.get("/users");
@@ -50,36 +50,6 @@ function Home() {
     setTabValue(newValue);
   };
 
-  function handleOpenCreateItemModal() {
-    setCreateItemModalOpen(true);
-  }
-
-  function handleCloseCreateItemModal() {
-    setCreateItemModalOpen(false);
-  }
-
-  async function getToDoUser() {
-    try {
-      if (!user?.id) return;
-
-      queryClient.setQueryData<number>("selectedUserId", user.id);
-
-      const data = (await API.get(`/user/${user.id}/todos`)).data;
-
-      setUserToDos(data);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  useEffect(() => {
-    if (user) {
-      getToDoUser();
-    } else {
-      setUserToDos([]);
-    }
-  }, [user]);
-
   return (
     <Container>
       <div className="content">
@@ -93,56 +63,31 @@ function Home() {
           <Tab icon={<FormatListBulletedIcon />} label="todos" />
         </Tabs>
         <TabPanel value={tabValue} index={0}>
-          <CreateUpdateItemModal
-            isOpen={createItemModalOpen}
-            onRequestClose={handleCloseCreateItemModal}
-            keyData={"users"}
-          />
-
           <Button
             variant="contained"
-            onClick={handleOpenCreateItemModal}
+            onClick={() => handleOpenItemModal("users")}
             startIcon={<AddCircleOutlinedIcon />}
             style={{ margin: "1rem" }}
           >
             Add user
           </Button>
-          <ListItems
-            data={users}
-            keyData={"users"}
-            isSelectableList={true}
-            selected={user}
-            onSelection={(value) => setUser(value)}
-          />
+          <ListItems keyData={"users"} />
         </TabPanel>
         <TabPanel value={tabValue} index={1}>
-          <CreateUpdateItemModal
-            isOpen={createItemModalOpen}
-            onRequestClose={handleCloseCreateItemModal}
-            keyData={"todos"}
-            listItems={userToDos}
-            setEditListItems={(newList) => {
-              if (userToDos) setUserToDos(newList);
-            }}
-          />
           {user && (
             <Button
               variant="contained"
-              onClick={handleOpenCreateItemModal}
+              onClick={() => handleOpenItemModal("todos")}
               startIcon={<AddCircleOutlinedIcon />}
               style={{ margin: "1rem" }}
             >
               Add todo
             </Button>
           )}
-
-          <ListItems
-            data={userToDos}
-            keyData={"todos"}
-            changeData={(v) => setUserToDos(v)}
-          />
+          <ListItems keyData={"todos"} />
         </TabPanel>
       </div>
+      <ItemModal />
     </Container>
   );
 }

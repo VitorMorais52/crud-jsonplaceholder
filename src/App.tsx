@@ -1,9 +1,15 @@
+import { ItemModalProvider } from "./hooks/useItemModal";
+import { SelectedUserProvider } from "./hooks/useSelectedUser";
 import Home from "./components/pages/Home";
 
 function App() {
   return (
     <div className="App">
-      <Home />
+      <SelectedUserProvider>
+        <ItemModalProvider>
+          <Home />
+        </ItemModalProvider>
+      </SelectedUserProvider>
     </div>
   );
 }

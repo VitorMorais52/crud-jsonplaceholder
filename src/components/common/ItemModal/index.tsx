@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useQueryClient } from "react-query";
 import Modal from "react-modal";
 
 //services
 import API from "../../../services/api";
 
+//hooks
+import { useItemModal } from "../../../hooks/useItemModal";
+import { useSelectedUser } from "../../../hooks/useSelectedUser";
+
 //types
-import { UserProps, Address, Company } from "../../../types/user";
+import { UserProps } from "../../../types/user";
 import { ToDoProps } from "../../../types/todo";
 
 //@mui components
@@ -24,23 +28,15 @@ import SaveIcon from "@mui/icons-material/Save";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { Container, Wrapper } from "./styles";
 
-type CreateItemModalProps = {
-  isOpen: boolean;
-  onRequestClose: () => void;
-  keyData: string;
-  editItem?: UserProps & ToDoProps;
-  listItems?: ToDoProps[] | UserProps[];
-  setEditListItems?: (newList: ToDoProps[] | UserProps[]) => void;
-};
+function ItemModal() {
+  const {
+    itemModalOpen: isOpen,
+    handleCloseItemModal: onRequestClose,
+    typeData,
+    editItem,
+  } = useItemModal();
+  const { user, toDos, setToDos } = useSelectedUser();
 
-function CreateUpdateItemModal({
-  isOpen,
-  onRequestClose,
-  keyData,
-  editItem,
-  listItems,
-  setEditListItems,
-}: CreateItemModalProps) {
   const initialStateUser = {
     name: "",
     username: "",
@@ -60,14 +56,78 @@ function CreateUpdateItemModal({
   });
 
   const queryClient = useQueryClient();
-  const dataCached = queryClient.getQueryData<ToDoProps[] | UserProps[]>(
-    keyData
-  );
 
   const fields =
-    keyData === "users"
-      ? userFields
-      : { ...toDoFields, userId: queryClient.getQueryData("selectedUserId") };
+    typeData === "users" ? userFields : { ...toDoFields, userId: user?.id };
+
+  async function createItem() {
+    try {
+      const response = await API.post(`/${typeData}`, {
+        ...fields,
+      });
+
+      addSingleItem(response.data);
+      setFields();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      onRequestClose();
+    }
+  }
+
+  async function editExistingItem() {
+    try {
+      const response = await API.put(`/${typeData}/${editItem?.id}`, {
+        ...fields,
+      });
+
+      const currentList = getCurrentList();
+
+      const indexOldItem = currentList.findIndex(
+        (oldItem) => oldItem.id === editItem?.id
+      );
+      currentList[indexOldItem] = { ...response.data };
+
+      if (typeData === "users") {
+        queryClient.setQueryData(typeData, currentList);
+        return;
+      }
+
+      setToDos(currentList);
+      setFields();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      onRequestClose();
+    }
+  }
+
+  function addSingleItem(item: UserProps | ToDoProps) {
+    if (!item) return;
+    const currentList = getCurrentList();
+
+    if (typeData === "users") {
+      queryClient.setQueryData("users", [item, ...currentList]);
+      return;
+    }
+    setToDos([item, ...currentList]);
+  }
+
+  function getCurrentList() {
+    return (
+      (typeData === "users"
+        ? queryClient.getQueryData<ToDoProps[] | UserProps[]>(typeData)
+        : toDos) || []
+    );
+  }
+
+  function setFields() {
+    if (editItem) {
+      setUserFields(editItem);
+    } else {
+      setUserFields(initialStateUser);
+    }
+  }
 
   const handleChangeUserFields =
     (fields: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,62 +139,16 @@ function CreateUpdateItemModal({
         return;
       }
 
-      const keyField = arrFields[0];
+      const [keyField, subKeyField] = arrFields;
       setUserFields({
         ...userFields,
-        [keyField]: { ...userFields["address"], [arrFields[1]]: value },
+        [keyField]: { ...userFields["address"], [subKeyField]: value },
       });
     };
 
-  async function createItem() {
-    try {
-      const response = await API.post(`/${keyData}`, {
-        ...fields,
-      });
-
-      if (dataCached) {
-        queryClient.setQueryData(keyData, [response.data, ...dataCached]);
-        return;
-      }
-      addItemToList(response.data);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      onRequestClose();
-    }
-  }
-
-  async function editExistingItem() {
-    try {
-      const currentList = dataCached || listItems;
-      if (!currentList) return;
-
-      const response = await API.put(`/${keyData}/${editItem?.id}`, {
-        ...fields,
-      });
-
-      const indexOldItem = currentList.findIndex(
-        (oldItem) => oldItem.id === editItem?.id
-      );
-      currentList[indexOldItem] = { ...response.data };
-
-      if (dataCached) {
-        queryClient.setQueryData(keyData, currentList);
-
-        return;
-      }
-
-      if (setEditListItems) setEditListItems(currentList);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      onRequestClose();
-    }
-  }
-
-  function addItemToList(item: UserProps | ToDoProps) {
-    if (setEditListItems && listItems) setEditListItems([item, ...listItems]);
-  }
+  useEffect(() => {
+    setFields();
+  }, [editItem]);
 
   return (
     <Modal
@@ -150,7 +164,7 @@ function CreateUpdateItemModal({
       </div>
 
       <Container>
-        {keyData === "users" && (
+        {typeData === "users" && (
           <>
             <Divider style={{ marginTop: "1rem" }}>Personal data</Divider>
             <Wrapper columns="repeat(2, 1fr)">
@@ -209,7 +223,7 @@ function CreateUpdateItemModal({
             </Wrapper>
           </>
         )}
-        {keyData === "todos" && (
+        {typeData === "todos" && (
           <Wrapper columns="auto 1fr">
             <div className="buttons-add">
               <Checkbox
@@ -258,4 +272,4 @@ function CreateUpdateItemModal({
   );
 }
 
-export default CreateUpdateItemModal;
+export default ItemModal;
