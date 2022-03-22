@@ -27,7 +27,6 @@ export function SelectedUserProvider({ children }: SelectedUserProviderProps) {
   const [toDos, setToDos] = useState<ToDoProps[]>();
 
   async function getToDos() {
-    console.log("teste");
     const data = (await API.get(`/user/${user?.id}/todos`)).data;
     setToDos(data);
   }
