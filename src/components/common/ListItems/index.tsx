@@ -32,16 +32,16 @@ import { Container, Content, Status } from "./styles";
 type ItemProps = UserProps & ToDoProps;
 
 type ListItemsProps = {
-  keyData: string;
+  typeData: string;
 };
 
-function ListItems({ keyData }: ListItemsProps) {
+function ListItems({ typeData }: ListItemsProps) {
   const { user: currentUser, setUser, toDos, setToDos } = useSelectedUser();
   const { handleOpenItemModal, setEditItem } = useItemModal();
 
   const queryClient = useQueryClient();
   const dataList: ItemProps[] | undefined =
-    keyData === "users" ? queryClient.getQueryData("users") : toDos;
+    typeData === "users" ? queryClient.getQueryData("users") : toDos;
 
   function handleSelectItem(item: UserProps | undefined) {
     const newSelected = item?.id === currentUser?.id ? undefined : item;
@@ -66,7 +66,7 @@ function ListItems({ keyData }: ListItemsProps) {
         if (oldItem.id === item.id) return changedItem;
         return oldItem;
       });
-      UpdateDataList(newItems);
+      updateDataList(newItems);
     }
   }
 
@@ -74,17 +74,16 @@ function ListItems({ keyData }: ListItemsProps) {
     try {
       if (!dataList) return;
 
-      await API.delete(`/${keyData}/${dataList[index].id}`);
+      await API.delete(`/${typeData}/${dataList[index].id}`);
 
-      if (dataList[index].id === currentUser?.id) {
+      if (typeData === "users" && dataList[index].id === currentUser?.id) {
         handleSelectItem(undefined);
       }
 
       const newItems = dataList.filter(
         (item) => item.id !== dataList[index].id
       );
-
-      UpdateDataList(newItems);
+      updateDataList(newItems);
     } catch (error) {
       console.log(error);
     }
@@ -92,11 +91,11 @@ function ListItems({ keyData }: ListItemsProps) {
 
   function openEditItem(item: ItemProps) {
     setEditItem(item);
-    handleOpenItemModal(keyData);
+    handleOpenItemModal(typeData);
   }
 
-  function UpdateDataList(data: ItemProps[]) {
-    if (keyData === "users") {
+  function updateDataList(data: ItemProps[]) {
+    if (typeData === "users") {
       queryClient.setQueryData("users", data);
       return;
     }
@@ -111,52 +110,51 @@ function ListItems({ keyData }: ListItemsProps) {
             {dataList.map((item, index) => (
               <Content key={index}>
                 <Item
-                  isSelectableList={keyData === "users"}
+                  isSelectableList={typeData === "users"}
                   selected={item.id === currentUser?.id}
                   click={() => handleSelectItem(item)}
                 >
                   <ListItemAvatar>
-                    <Avatar>
-                      {keyData === "users" && <AccountCircleIcon />}
-                      {keyData === "todos" && <AssignmentIcon />}
-                    </Avatar>
+                    {typeData === "users" && (
+                      <Avatar>
+                        <AccountCircleIcon />{" "}
+                      </Avatar>
+                    )}
+                    {typeData === "todos" && (
+                      <IconButton
+                        edge="end"
+                        aria-label="item status"
+                        onClick={() => {
+                          handleChangeStatusItem(item);
+                        }}
+                      >
+                        <CheckCircleIcon
+                          color={item.completed ? "success" : "inherit"}
+                        />
+                      </IconButton>
+                    )}
                   </ListItemAvatar>
                   <ListItemText
                     primary={item.name || item.title}
                     secondary={
-                      keyData === "todos" ? (
+                      typeData === "todos" ? (
                         <Status completed={!!item.completed}>
                           {item.completed ? "completed" : "uncompleted"}
                         </Status>
                       ) : (
-                        keyData === "users" && <span>{item.username}</span>
+                        typeData === "users" && <span>{item.username}</span>
                       )
                     }
                   />
                 </Item>
                 <div className="buttons">
-                  {keyData === "users" ? (
-                    <IconButton
-                      edge="end"
-                      aria-label="edit item"
-                      onClick={() => openEditItem(item)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                  ) : (
-                    <IconButton
-                      edge="end"
-                      aria-label="item status"
-                      onClick={() => {
-                        handleChangeStatusItem(item);
-                      }}
-                    >
-                      <CheckCircleIcon
-                        color={item.completed ? "success" : "inherit"}
-                      />
-                    </IconButton>
-                  )}
-
+                  <IconButton
+                    edge="end"
+                    aria-label="edit item"
+                    onClick={() => openEditItem(item)}
+                  >
+                    <EditIcon />
+                  </IconButton>
                   <IconButton
                     edge="end"
                     aria-label="delete item"

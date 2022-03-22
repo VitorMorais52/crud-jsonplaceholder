@@ -49,11 +49,13 @@ function ItemModal() {
       zipcode: "",
     },
   };
-  const [userFields, setUserFields] = useState(editItem || initialStateUser);
-  const [toDoFields, setToDoFields] = useState<ToDoProps>({
+
+  const initialStateToDo = {
     completed: false,
     title: "",
-  });
+  };
+  const [userFields, setUserFields] = useState(editItem || initialStateUser);
+  const [toDoFields, setToDoFields] = useState<ToDoProps>(initialStateToDo);
 
   const queryClient = useQueryClient();
 
@@ -123,9 +125,11 @@ function ItemModal() {
 
   function setFields() {
     if (editItem) {
-      setUserFields(editItem);
+      if (typeData === "users") setUserFields(editItem);
+      else setToDoFields(editItem);
     } else {
       setUserFields(initialStateUser);
+      setToDoFields(initialStateToDo);
     }
   }
 

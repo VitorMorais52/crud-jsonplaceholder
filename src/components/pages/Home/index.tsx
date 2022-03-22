@@ -71,7 +71,7 @@ function Home() {
           >
             Add user
           </Button>
-          <ListItems keyData={"users"} />
+          <ListItems typeData={"users"} />
         </TabPanel>
         <TabPanel value={tabValue} index={1}>
           {user && (
@@ -84,7 +84,7 @@ function Home() {
               Add todo
             </Button>
           )}
-          <ListItems keyData={"todos"} />
+          <ListItems typeData={"todos"} />
         </TabPanel>
       </div>
       <ItemModal />
